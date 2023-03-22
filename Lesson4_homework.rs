@@ -60,3 +60,87 @@ fn main() {
     
 }
 
+/*
+* 2.实现一个打印图形面积的函数，它接收一个可以计算面积的类型作为参数，比如圆形，三角形，正方形，需要用到范型和范型约束。
+*/
+
+
+trait CaculateArea {
+    fn get_area(&self) -> u32;
+}
+
+struct Circle {
+    radius: f32,
+}
+impl CaculateArea for Circle {
+    fn get_area(&self) -> u32 {
+        let PI: f32 = 3.14159265;
+        return (PI * self.radius).round() as u32;
+    }
+}
+
+struct Rectangle {
+    //结构体的定义
+    width: u32,
+    height: u32,
+}
+
+impl CaculateArea for Rectangle {
+    fn get_area(&self) -> u32 {
+        return self.width * self.height;
+    }
+}
+
+struct Square {
+    s: u32,
+}
+impl CaculateArea for Square {
+    fn get_area(&self) -> u32 {
+        return self.s * self.s;
+    }
+}
+
+struct Triangle {
+    bottom: u32,
+    height: u32,
+}
+impl CaculateArea for Triangle {
+    fn get_area(&self) -> u32 {
+        return self.bottom * self.height / 2;
+    }
+}
+
+fn get_area<T>(shate:T) -> u32
+where
+    T: CaculateArea,
+{
+    return shate.get_area();
+}
+
+fn main() {
+   let circle = Circle{
+        radius: 16.0,
+    };
+
+    let triangle = Triangle{
+        bottom:10,
+        height:8,
+    };
+
+    let square = Square{
+        s: 9,
+    };
+
+    let rectangle = Rectangle{
+        width:20,
+        height:10,
+    };
+
+
+    println!("Circle Area:{}",get_area(circle));
+    println!("Triangle Area:{}",get_area(triangle));
+    println!("Square Area:{}",get_area(square));
+    println!("Rectangle Area:{}",get_area(rectangle));
+}
+
+
