@@ -1,4 +1,3 @@
-
 #![cfg_attr(not(feature = "std"), no_std)]
 pub use pallet::*;
 
@@ -6,7 +5,7 @@ pub use pallet::*;
 pub mod pallet {
 	use frame_support::{inherent::Vec, pallet_prelude::*, BoundedVec};
 	use frame_system::{ensure_signed, pallet_prelude::*};
-	// use sp_std::prelude::*; 这个代码我没有用，也可以实现，不知道为什么
+	// use sp_std::prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -32,6 +31,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		ClaimCreated(T::AccountId, Vec<u8>),
 		ClaimRevoked(T::AccountId, Vec<u8>),
+        ClaimTransfer(T::AccountId, Vec<u8>,T::AccountId), //添加了转移存证的Event
 	}
 
 	#[pallet::error]
@@ -45,8 +45,10 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+        //创建存证的功能，
 		#[pallet::weight(0)]
 		pub fn create_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -65,6 +67,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+        //删除存证的功能，
 		#[pallet::weight(0)]
 		pub fn revoke_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -83,25 +86,26 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+        //转移存证的功能，增加了接收账户的地址做为参数 dest
         #[pallet::weight(0)]
 		pub fn transfer_claim(origin: OriginFor<T>, claim: Vec<u8>, dest: T::AccountId) -> DispatchResultWithPostInfo {
-            let sender = ensure_signed(origin)?;
+                      let sender = ensure_signed(origin)?;
 
-            let bounded_claim = BoundedVec::<u8, T::MaxClaimLength>::try_from(claim.clone())
+                      let bounded_claim = BoundedVec::<u8, T::MaxClaimLength>::try_from(claim.clone())
 				.map_err(|_| Error::<T>::ClaimTooLong)?;
 
 			let (owner, _) = Proofs::<T>::get(&bounded_claim).ok_or(Error::<T>::ClaimNotExist)?;
 
-             ensure!(owner == sender, Error::<T>::NotClaimOwner);
+                      ensure!(owner == sender, Error::<T>::NotClaimOwner);
 
-             Proofs::<T>::insert(
+                      Proofs::<T>::insert(
 				&bounded_claim,
-				(dest, frame_system::Pallet::<T>::block_number()),
+				(dest.clone(), frame_system::Pallet::<T>::block_number()),
 			);
 
-            // Self::deposit_event(Event::ClaimRevoked(sender, claim));
+                      Self::deposit_event(Event::ClaimTransfer(sender, claim, dest));
 
-			Ok(().into())
+		      Ok(().into())
 
         }
 	}
